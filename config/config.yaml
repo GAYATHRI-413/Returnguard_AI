@@ -1,0 +1,186 @@
+# ==============================================================================
+# ReturnGuard AI - Central Configuration
+# config/config.yaml
+#
+# This file is the single source of truth for non-secret configuration.
+# Secrets (DB passwords, JWT keys, API keys) live in .env, NOT here.
+# Loaded by: backend/app/core/config.py
+# ==============================================================================
+
+app:
+  name: "ReturnGuard AI"
+  version: "1.0.0"
+  description: "AI Powered Return Fraud Detection & Risk Intelligence System"
+  environment: "development"   # development | staging | production
+
+# ------------------------------------------------------------------------------
+# API Server
+# ------------------------------------------------------------------------------
+api:
+  host: "0.0.0.0"
+  port: 8000
+  prefix: "/api/v1"
+  cors_origins:
+    - "http://localhost:8501"   # Streamlit default port
+    - "http://localhost:3000"
+  rate_limit_per_minute: 120
+
+# ------------------------------------------------------------------------------
+# Frontend
+# ------------------------------------------------------------------------------
+frontend:
+  port: 8501
+  theme: "dark"
+  api_base_url: "http://localhost:8000/api/v1"
+
+# ------------------------------------------------------------------------------
+# Database
+# ------------------------------------------------------------------------------
+database:
+  # driver is chosen at runtime: if DATABASE_URL env var is set (Postgres),
+  # it is used; otherwise falls back to local SQLite for easy local dev.
+  sqlite_fallback_path: "database/returnguard.db"
+  echo_sql: false
+  pool_size: 10
+  max_overflow: 20
+
+# ------------------------------------------------------------------------------
+# Paths
+# ------------------------------------------------------------------------------
+paths:
+  raw_dataset: "ml/data/return_fraud_dataset.csv"
+  processed_dataset: "ml/data/processed_dataset.csv"
+  models_dir: "ml/models"
+  best_model_metadata: "ml/models/best_model_metadata.json"
+  logistic_regression_model: "ml/models/logistic_regression.joblib"
+  random_forest_model: "ml/models/random_forest.joblib"
+  xgboost_model: "ml/models/xgboost_model.joblib"
+  deep_learning_model: "ml/models/deep_learning_model.keras"
+  scaler: "ml/models/scaler.joblib"
+  label_encoders: "ml/models/label_encoders.joblib"
+  feature_columns: "ml/models/feature_columns.json"
+  shap_explainer: "ml/models/shap_explainer.joblib"
+  model_comparison_report: "ml/models/model_comparison_report.json"
+  training_plots_dir: "ml/models/plots"
+  logs_dir: "logs"
+
+# ------------------------------------------------------------------------------
+# Dataset Generation
+# ------------------------------------------------------------------------------
+dataset:
+  num_records: 12000
+  fraud_rate: 0.18            # ~18% base fraud rate before rule-based adjustment
+  random_seed: 42
+  train_test_split: 0.20
+  validation_split: 0.15      # taken from training set, used for DNN + early stopping
+
+# ------------------------------------------------------------------------------
+# Feature Engineering
+# ------------------------------------------------------------------------------
+features:
+  numerical:
+    - order_value
+    - product_price
+    - customer_age
+    - account_age_days
+    - total_orders
+    - total_returns
+    - return_percentage
+    - avg_days_to_return
+    - customer_lifetime_value
+    - avg_order_value
+    - seller_rating
+    - seller_defect_rate
+    - seller_reliability_score
+    - delivery_days
+    - delivery_risk_score
+    - customer_risk_score
+    - days_since_last_purchase
+    - num_payment_methods_used
+    - distance_km
+    - product_weight_kg
+  categorical:
+    - product_category
+    - price_category
+    - return_reason
+    - payment_method
+    - shipping_method
+    - customer_segment
+    - device_type
+  binary_flags:
+    - is_luxury_product
+    - is_holiday_purchase
+    - is_seasonal_return
+    - is_high_value_order
+    - used_multiple_addresses
+    - used_multiple_payment_methods
+    - return_without_tags
+    - packaging_damaged_claim
+  target: "is_fraud"
+
+# ------------------------------------------------------------------------------
+# Model Training Hyperparameters
+# ------------------------------------------------------------------------------
+training:
+  logistic_regression:
+    max_iter: 1000
+    C: 1.0
+    class_weight: "balanced"
+
+  random_forest:
+    n_estimators: 300
+    max_depth: 14
+    min_samples_split: 6
+    min_samples_leaf: 2
+    class_weight: "balanced"
+    n_jobs: -1
+
+  xgboost:
+    n_estimators: 400
+    max_depth: 6
+    learning_rate: 0.05
+    subsample: 0.85
+    colsample_bytree: 0.85
+    eval_metric: "logloss"
+
+  deep_learning:
+    hidden_layers: [128, 64, 32]
+    dropout_rate: 0.30
+    l2_regularization: 0.001
+    learning_rate: 0.001
+    batch_size: 64
+    epochs: 100
+    early_stopping_patience: 10
+    lr_scheduler_patience: 5
+    lr_scheduler_factor: 0.5
+
+# ------------------------------------------------------------------------------
+# Risk Scoring / Business Rules
+# ------------------------------------------------------------------------------
+risk_scoring:
+  scale_min: 0
+  scale_max: 100
+  thresholds:
+    low_risk_max: 35        # 0-35   -> Auto Approve
+    medium_risk_max: 70      # 36-70  -> Manual Review
+    # 71-100 -> Investigation Required
+  actions:
+    low: "AUTO_APPROVE"
+    medium: "MANUAL_REVIEW"
+    high: "INVESTIGATION_REQUIRED"
+
+# ------------------------------------------------------------------------------
+# Explainability
+# ------------------------------------------------------------------------------
+explainability:
+  top_k_features: 5
+  shap_background_samples: 100
+
+# ------------------------------------------------------------------------------
+# Logging
+# ------------------------------------------------------------------------------
+logging:
+  level: "INFO"
+  rotation: "10 MB"
+  retention: "14 days"
+  format: "{time:YYYY-MM-DD HH:mm:ss} | {level} | {module}:{function}:{line} | {message}"

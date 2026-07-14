@@ -1,0 +1,75 @@
+# ==============================================================================
+# ReturnGuard AI - docker-compose.yml
+#
+# Run the full stack:
+#   docker compose up --build
+#
+# Backend:  http://localhost:8000/docs
+# Frontend: http://localhost:8501
+# ==============================================================================
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: returnguard_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: returnguard_user
+      POSTGRES_PASSWORD: returnguard_pass
+      POSTGRES_DB: returnguard_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - returnguard_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U returnguard_user -d returnguard_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: returnguard_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: production
+      DEBUG: "false"
+      DATABASE_URL: postgresql://returnguard_user:returnguard_pass@postgres:5432/returnguard_db
+      JWT_SECRET_KEY: change_me_in_production_min_32_chars
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: admin123
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - returnguard_models:/app/ml/models
+      - returnguard_logs:/app/logs
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: returnguard_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      API_BASE_URL: http://backend:8000/api/v1
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: admin123
+    ports:
+      - "8501:8501"
+    volumes:
+      - returnguard_models:/app/ml/models
+
+volumes:
+  returnguard_pg_data:
+  returnguard_models:
+  returnguard_logs:

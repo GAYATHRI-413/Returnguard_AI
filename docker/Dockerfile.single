@@ -1,0 +1,52 @@
+# ==============================================================================
+# ReturnGuard AI - docker/Dockerfile.single
+#
+# Runs BOTH the FastAPI backend and the Streamlit frontend in one container,
+# behind nginx, so the whole app is reachable at a SINGLE public URL.
+#   /api/*  and /health  -> FastAPI  (internal port 8000)
+#   everything else      -> Streamlit (internal port 8501)
+#
+# Build:  docker build -f docker/Dockerfile.single -t returnguard-ai .
+# Run:    docker run -p 8080:8080 -e PORT=8080 returnguard-ai
+# ==============================================================================
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libgomp1 \
+    curl \
+    nginx \
+    gettext-base \
+    supervisor \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY backend/ ./backend/
+COPY frontend/ ./frontend/
+COPY ml/ ./ml/
+COPY config/ ./config/
+COPY database/ ./database/
+
+RUN mkdir -p ml/models ml/models/plots logs database
+
+# nginx / supervisord config
+COPY docker/nginx.conf.template /etc/nginx/nginx.conf.template
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+RUN rm -f /etc/nginx/sites-enabled/default
+
+ENV API_BASE_URL=http://127.0.0.1:8000/api/v1
+ENV PORT=10000
+EXPOSE 10000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:${PORT}/health || exit 1
+
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

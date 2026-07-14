@@ -1,0 +1,41 @@
+{
+  "best_model": "xgboost",
+  "model_path_key": "xgboost_model",
+  "metrics": {
+    "accuracy": 0.8738,
+    "precision": 0.7009,
+    "recall": 0.5208,
+    "f1_score": 0.5976,
+    "roc_auc": 0.9092
+  },
+  "all_results": {
+    "logistic_regression": {
+      "accuracy": 0.8117,
+      "precision": 0.486,
+      "recall": 0.8009,
+      "f1_score": 0.6049,
+      "roc_auc": 0.8914
+    },
+    "random_forest": {
+      "accuracy": 0.8646,
+      "precision": 0.6524,
+      "recall": 0.5301,
+      "f1_score": 0.5849,
+      "roc_auc": 0.8966
+    },
+    "xgboost": {
+      "accuracy": 0.8738,
+      "precision": 0.7009,
+      "recall": 0.5208,
+      "f1_score": 0.5976,
+      "roc_auc": 0.9092
+    },
+    "deep_learning": {
+      "accuracy": 0.875,
+      "precision": 0.7102,
+      "recall": 0.5162,
+      "f1_score": 0.5979,
+      "roc_auc": 0.8992
+    }
+  }
+}

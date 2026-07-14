@@ -1,0 +1,50 @@
+# ==============================================================================
+# ReturnGuard AI - render.yaml
+#
+# Render Blueprint: deploys ONE web service (FastAPI + Streamlit combined,
+# see docker/Dockerfile.single) behind nginx, plus a managed Postgres DB.
+# Push this repo to GitHub, then in Render: New -> Blueprint -> pick this repo.
+# Result: a single public URL for the whole app.
+# ==============================================================================
+databases:
+  - name: returnguard-postgres
+    databaseName: returnguard_db
+    user: returnguard_user
+    plan: free
+
+services:
+  - type: web
+    name: returnguard-ai
+    runtime: docker
+    dockerfilePath: ./docker/Dockerfile.single
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: returnguard-postgres
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_PASSWORD
+        generateValue: true
+      # Same container, so the frontend talks to the backend over localhost -
+      # do NOT change this to a public URL.
+      - key: API_BASE_URL
+        value: http://127.0.0.1:8000/api/v1
+
+# ------------------------------------------------------------------------------
+# NOTE on the free plan: Render's free web services spin down after ~15
+# minutes with no incoming traffic, and spin back up (30-60s cold start) on
+# the next request. Since login state is only kept in server memory, a cold
+# start clears it and you'll be asked to log in again - this is normal free-
+# tier behavior, not a security incident. To avoid it, upgrade the service
+# to a paid "Starter" plan (no spin-down), or accept the occasional re-login.
+# ------------------------------------------------------------------------------

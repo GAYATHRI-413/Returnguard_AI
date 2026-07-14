@@ -1,0 +1,41 @@
+# ==============================================================================
+# ReturnGuard AI - requirements-run.txt
+#
+# Minimal install to RUN the app (predict/dashboard/login) using the
+# already-trained models in ml/models/. Skips training-only packages
+# (tensorflow, matplotlib, seaborn, imbalanced-learn) to save bandwidth.
+#
+# Use this instead of requirements.txt if you just want to run the app,
+# not retrain models. For full training capability, use requirements.txt.
+# ==============================================================================
+numpy==1.26.4
+pandas==2.2.2
+scipy==1.13.1
+
+scikit-learn==1.5.1
+xgboost==2.1.1
+joblib==1.4.2
+
+shap==0.46.0
+plotly==5.23.0
+
+fastapi==0.112.0
+uvicorn[standard]==0.30.5
+pydantic==2.8.2
+pydantic-settings==2.4.0
+python-multipart==0.0.9
+python-dotenv==1.0.1
+
+SQLAlchemy==2.0.32
+psycopg2-binary==2.9.9
+
+streamlit==1.37.1
+streamlit-option-menu==0.3.13
+streamlit-extras==0.4.7
+
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0
+
+PyYAML==6.0.2
+loguru==0.7.2
+requests==2.32.3

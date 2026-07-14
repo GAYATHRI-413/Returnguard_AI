@@ -1,0 +1,39 @@
+# ==============================================================================
+# ReturnGuard AI - docker/Dockerfile.backend
+#
+# Build:  docker build -f docker/Dockerfile.backend -t returnguard-backend .
+# Run:    docker run -p 8000:8000 returnguard-backend
+# ==============================================================================
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+# System deps needed by some ML libraries (xgboost, tensorflow, shap)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libgomp1 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY backend/ ./backend/
+COPY ml/ ./ml/
+COPY config/ ./config/
+COPY database/ ./database/
+
+# Directories written to at runtime (models, logs, sqlite db)
+RUN mkdir -p ml/models ml/models/plots logs database
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Render (and most PaaS) inject $PORT; fall back to 8000 for local docker run.
+CMD ["sh", "-c", "uvicorn backend.app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
